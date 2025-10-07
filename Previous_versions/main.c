@@ -72,6 +72,12 @@ int main(int ac, char *av[])
 		if (args[0] == NULL)
 			continue;
 
+		if (args[1] != NULL)
+		{
+			fprintf(stderr, "%s: No such file or directory\n", av[0]);
+			continue;
+		}
+
 		shell(args, av);
 	}
 	free(line);
