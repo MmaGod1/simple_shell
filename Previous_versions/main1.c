@@ -11,44 +11,27 @@ int shell(char **args, char **av)
 {
 	pid_t child_pid;
 	int status;
-	char *full_path = NULL;
-
-	/* Check if command has '/' or needs PATH search */
-	if (args[0][0] != '/')
-		full_path = find_path(args[0]);
-	else
-		full_path = _strdup(args[0]);
-
-	if (full_path == NULL)
-	{
-		perror(av[0]);
-		return (1);
-	}
 
 	child_pid = fork();
 	if (child_pid == -1)
 	{
 		perror("Error");
-		free(full_path);
 		return (1);
 	}
 
 	if (child_pid == 0)
 	{
-		if (execve(full_path, args, environ) == -1)
+		if (execve(args[0], args, environ) == -1)
 		{
 			perror(av[0]);
-			free(full_path);
 			exit(1);
 		}
 	}
 	else
 		wait(&status);
 
-	free(full_path);
 	return (0);
 }
-
 
 /**
  * main - entry point for the simple shell
