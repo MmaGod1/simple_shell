@@ -62,7 +62,7 @@ int main(int ac, char *av[])
 
 		i = 0;
 		tokens = strtok(line, " \n");
-		while (tokens != NULL && i < 64)
+		while (tokens != NULL && i < 63)
 		{
 			args[i++] = tokens;
 			tokens = strtok(NULL, " \n");
@@ -80,7 +80,6 @@ int main(int ac, char *av[])
 
 		shell(args, av);
 	}
-
 	free(line);
 	return (0);
 }
