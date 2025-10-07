@@ -1,11 +1,11 @@
 #include "main.h"
 
 /**
- * shell - creates a child process and executes a command
+ * shell - executes a command in a child process
  * @args: array of arguments, where args[0] is the command
- * @av: argument vector from main, used for printing program name
+ * @av: argument vector from main (used for program name)
  *
- * Return: 0 on success, 127 if command not found, 1 on other errors
+ * Return: exit status (0 on success, 127 if command not found)
  */
 int shell(char **args, char **av)
 {
@@ -13,9 +13,7 @@ int shell(char **args, char **av)
 	int status;
 	char *full_path = NULL;
 
-	/* Find executable path */
 	full_path = find_path(args[0]);
-
 	if (full_path == NULL)
 	{
 		fprintf(stderr, "%s: 1: %s: not found\n", av[0], args[0]);
@@ -40,10 +38,17 @@ int shell(char **args, char **av)
 		}
 	}
 	else
-		wait(&status);
+	{
+		waitpid(child_pid, &status, 0);
+	}
 
 	free(full_path);
-	return (0);
+
+	/* Ensure the shell returns the correct status from child */
+	if (WIFEXITED(status))
+		return (WEXITSTATUS(status));
+
+	return (status);
 }
 
 /**
@@ -51,18 +56,17 @@ int shell(char **args, char **av)
  * @ac: argument count
  * @av: argument vector
  *
- * Return: Always 0 (Success)
+ * Return: Always 0
  */
 int main(int ac, char *av[])
 {
-	int i;
+	int i, status = 0;
 	char *args[64], *line = NULL, *tokens;
 	size_t len = 0;
 	(void)ac;
 
 	while (1)
 	{
-		/* Print prompt only in interactive mode */
 		if (isatty(STDIN_FILENO))
 			printf("($) ");
 
@@ -85,8 +89,8 @@ int main(int ac, char *av[])
 		if (args[0] == NULL)
 			continue;
 
-		shell(args, av);
+		status = shell(args, av);
 	}
 	free(line);
-	return (0);
+	return (status == 127 ? 127 : 0);
 }
