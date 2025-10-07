@@ -5,7 +5,7 @@
  * @args: array of arguments, where args[0] is the command
  * @av: argument vector from main, used for printing program name
  *
- * Return: 0 on success, 1 on error
+ * Return: 0 on success, 127 if command not found, 1 on other errors
  */
 int shell(char **args, char **av)
 {
@@ -13,16 +13,13 @@ int shell(char **args, char **av)
 	int status;
 	char *full_path = NULL;
 
-	/* Check if command has '/' or needs PATH search */
-	if (args[0][0] != '/')
-		full_path = find_path(args[0]);
-	else
-		full_path = _strdup(args[0]);
+	/* Find executable path */
+	full_path = find_path(args[0]);
 
 	if (full_path == NULL)
 	{
-		perror(av[0]);
-		return (1);
+		fprintf(stderr, "%s: 1: %s: not found\n", av[0], args[0]);
+		return (127);
 	}
 
 	child_pid = fork();
@@ -49,7 +46,6 @@ int shell(char **args, char **av)
 	return (0);
 }
 
-
 /**
  * main - entry point for the simple shell
  * @ac: argument count
@@ -59,7 +55,7 @@ int shell(char **args, char **av)
  */
 int main(int ac, char *av[])
 {
-	int i = 0;
+	int i;
 	char *args[64], *line = NULL, *tokens;
 	size_t len = 0;
 	(void)ac;
