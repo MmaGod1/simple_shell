@@ -43,22 +43,23 @@ int shell(char **args, char **av)
 int main(int ac, char *av[])
 {
 	int i = 0;
-	char *args[64];
-	char *line = NULL, *tokens;
+	char *args[64], *line = NULL, *tokens;
 	size_t len = 0;
-
 	(void)ac;
 
 	while (1)
 	{
-		printf("($) ");
+		/* Print prompt only in interactive mode */
+		if (isatty(STDIN_FILENO))
+			printf("($) ");
+
 		if (getline(&line, &len, stdin) == -1)
 		{
-			printf("\n");
+			if (isatty(STDIN_FILENO))
+				printf("\n");
 			break;
 		}
 
-		i = 0;
 		tokens = strtok(line, " \n");
 		while (tokens != NULL && i < 64)
 		{
