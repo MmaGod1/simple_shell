@@ -61,7 +61,6 @@ int main(int ac, char *av[])
 		}
 
 		i = 0;
-		memset(args, 0, sizeof(args));
 		tokens = strtok(line, " \n");
 		while (tokens != NULL && i < 64)
 		{
