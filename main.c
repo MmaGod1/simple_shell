@@ -48,7 +48,7 @@ int shell(char **args, char **av)
 	if (WIFEXITED(status))
 		return (WEXITSTATUS(status));
 
-	return (status);
+	return (2);
 }
 
 /**
@@ -93,7 +93,7 @@ int main(int ac, char *av[])
 		if (_strcmp(args[0], "exit") == 0)
 		{
 			free(line);
-			exit(0);
+			exit(status);
 		}
 
 		status = shell(args, av);
