@@ -61,7 +61,7 @@ int shell(char **args, char **av)
 int main(int ac, char *av[])
 {
 	int i, status = 0;
-	char *args[64], *line = NULL, *tokens;
+	char *args[1024], *line = NULL, *tokens;
 	(void)ac;
 
 	while (1)
@@ -83,7 +83,7 @@ int main(int ac, char *av[])
 
 		i = 0;
 		tokens = strtok(line, " \n");
-		while (tokens != NULL && i < 63)
+		while (tokens != NULL && i < 1024)
 		{
 			args[i++] = tokens;
 			tokens = strtok(NULL, " \n");
