@@ -15,12 +15,13 @@ char *_get_path(void);
 void print_env(void);
 char *_getline(void);
 
-
 /** String helper functions **/
 int _strlen(char *s);
 char *_strcpy(char *dest, char *src);
 char *_strcat(char *dest, char *src);
 char *_strdup(char *str);
 int _strcmp(char *s1, char *s2);
+int is_delimiter(char c, const char *delim);
+int _strtok(char *line, char **args, int max_args, const char *delim);
 
 #endif
