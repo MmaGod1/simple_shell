@@ -34,7 +34,7 @@ int shell(char **args, char **av)
 		{
 			perror(av[0]);
 			free(full_path);
-			exit(1);
+			exit(2);
 		}
 	}
 	else
@@ -99,5 +99,5 @@ int main(int ac, char *av[])
 		status = shell(args, av);
 	}
 	free(line);
-	return (status == 127 ? 127 : 0);
+	return (status);
 }
