@@ -62,18 +62,15 @@ int main(int ac, char *av[])
 {
 	int i, status = 0;
 	char *args[64], *line = NULL, *tokens;
+	size_t len = 0;
 	(void)ac;
 
 	while (1)
 	{
 		if (isatty(STDIN_FILENO))
-		{
 			printf("($) ");
-			fflush(stdout);
-		}
 
-		line = _getline();
-		if (line == NULL)
+		if (_getline(&line, &len, stdin) == -1)
 		{
 			if (isatty(STDIN_FILENO))
 				printf("\n");

@@ -23,7 +23,7 @@ char *find_path(char *command)
 		}
 	}
 
-	path_env = getenv("PATH");
+	path_env = _get_path();
 	if (!path_env)
 		return (NULL);
 
