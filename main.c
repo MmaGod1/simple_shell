@@ -96,6 +96,12 @@ int main(int ac, char *av[])
 			exit(status);
 		}
 
+		if (_strcmp(args[0], "env") == 0)
+		{
+			print_env();
+			continue;
+		}
+
 		status = shell(args, av);
 	}
 	free(line);

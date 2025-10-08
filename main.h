@@ -12,6 +12,7 @@ extern char **environ;
 int shell(char **args, char **av);
 char *find_path(char *command);
 char *_get_path(void);
+void print_env(void);
 
 /** String helper functions **/
 int _strlen(char *s);
