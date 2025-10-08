@@ -60,8 +60,8 @@ int shell(char **args, char **av)
  */
 int main(int ac, char *av[])
 {
-	int i, status = 0;
-	char *args[1024], *line = NULL, *tokens;
+	int status = 0;
+	char *args[1024], *line = NULL;
 	(void)ac;
 
 	while (1)
@@ -81,14 +81,8 @@ int main(int ac, char *av[])
 			break;
 		}
 
-		i = 0;
-		tokens = strtok(line, " \n");
-		while (tokens != NULL && i < 1024)
-		{
-			args[i++] = tokens;
-			tokens = strtok(NULL, " \n");
-		}
-		args[i] = NULL;
+		/* Tokenize the line */
+		_strtok(line, args, 1024, " \n\t");
 
 		if (args[0] == NULL)
 		{
