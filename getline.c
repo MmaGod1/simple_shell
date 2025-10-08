@@ -1,12 +1,9 @@
 #include "main.h"
-#include <unistd.h>
-#include <stdlib.h>
 
 #define READ_BUF_SIZE 1024
 
 /**
- * _getline - reads a line from stdin
- *
+ * _getline - reads a line from stdin (without using getline or memcpy)
  * Return: pointer to the line (malloc’d), or NULL on EOF/error
  */
 char *_getline(void)
@@ -32,7 +29,6 @@ char *_getline(void)
 			}
 		}
 
-		/* read one char */
 		c = buffer[buf_pos++];
 
 		/* allocate new space manually */
@@ -43,18 +39,20 @@ char *_getline(void)
 			return (NULL);
 		}
 
-		/* manually copy old content */
+		/* copy manually */
 		for (j = 0; j < (ssize_t)line_len; j++)
 			new_line[j] = line[j];
 
 		if (line)
+		{
 			free(line);
+			line = NULL; /* prevent dangling pointer */
+		}
 
 		line = new_line;
 		line[line_len++] = c;
 		line[line_len] = '\0';
 
-		/* stop on newline */
 		if (c == '\n')
 			break;
 	}

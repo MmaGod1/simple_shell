@@ -77,6 +77,7 @@ int main(int ac, char *av[])
 		{
 			if (isatty(STDIN_FILENO))
 				printf("\n");
+			free(line);
 			break;
 		}
 
@@ -90,7 +91,10 @@ int main(int ac, char *av[])
 		args[i] = NULL;
 
 		if (args[0] == NULL)
+		{
+			free(line);
 			continue;
+		}
 
 		/* Handle the exit command */
 		if (_strcmp(args[0], "exit") == 0)
@@ -102,10 +106,13 @@ int main(int ac, char *av[])
 		if (_strcmp(args[0], "env") == 0)
 		{
 			print_env();
+			free(line);
 			continue;
 		}
 
 		status = shell(args, av);
+		free(line);
+		line = NULL;
 	}
 	free(line);
 	return (status);
