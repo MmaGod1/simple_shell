@@ -89,6 +89,13 @@ int main(int ac, char *av[])
 		if (args[0] == NULL)
 			continue;
 
+		/* Handle the exit command */
+		if (_strcmp(args[0], "exit") == 0)
+		{
+			free(line);
+			exit(0);
+		}
+
 		status = shell(args, av);
 	}
 	free(line);
