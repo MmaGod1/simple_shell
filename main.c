@@ -61,7 +61,7 @@ int shell(char **args, char **av)
 int main(int ac, char *av[])
 {
 	int i, status = 0;
-	char *args[1024], *line = NULL, *tokens, *trimmed;
+	char *args[1024], *line = NULL, *tokens;
 	(void)ac;
 
 	while (1)
@@ -81,22 +81,8 @@ int main(int ac, char *av[])
 			break;
 		}
 
-
 		i = 0;
-
-		/* Trim leading spaces/tabs */
-		trimmed = line;
-		while (*trimmed == ' ' || *trimmed == '\t')
-			trimmed++;
-
-		/* If the line is all spaces, skip */
-		if (*trimmed == '\0' || *trimmed == '\n') {
-			free(line);
-			continue;
-		}
-
-		/* Tokenize trimmed line */
-		tokens = strtok(trimmed, " \n");
+		tokens = strtok(line, " \n");
 		while (tokens != NULL && i < 1024)
 		{
 			args[i++] = tokens;

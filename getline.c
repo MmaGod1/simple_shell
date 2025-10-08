@@ -1,19 +1,24 @@
 #include "main.h"
 
 #define READ_BUF_SIZE 1024
+#define INITIAL_LINE_SIZE 128
 
 /**
- * _getline - reads a line from stdin (without using getline or memcpy)
- * Return: pointer to the line (malloc’d), or NULL on EOF/error
+ * _getline - reads a line from stdin efficiently
+ * Return: pointer to the line (malloc'd), or NULL on EOF/error
  */
 char *_getline(void)
 {
 	static char buffer[READ_BUF_SIZE];
 	static ssize_t buf_pos, buf_size;
 	char *line = NULL, *new_line;
-	size_t line_len = 0;
+	size_t line_len = 0, line_capacity = INITIAL_LINE_SIZE;
 	char c;
-	ssize_t j;
+	size_t i;
+
+	line = malloc(line_capacity);
+	if (!line)
+		return (NULL);
 
 	while (1)
 	{
@@ -24,38 +29,42 @@ char *_getline(void)
 			buf_pos = 0;
 			if (buf_size <= 0)
 			{
-				free(line);
-				return (NULL);
+				if (line_len == 0)
+				{
+					free(line);
+					return (NULL);
+				}
+				break;
 			}
 		}
 
 		c = buffer[buf_pos++];
 
-		/* allocate new space manually */
-		new_line = malloc(line_len + 2);
-		if (!new_line)
+		/* expand buffer if needed (double the size) */
+		if (line_len + 1 >= line_capacity)
 		{
+			line_capacity *= 2;
+			new_line = malloc(line_capacity);
+			if (!new_line)
+			{
+				free(line);
+				return (NULL);
+			}
+
+			/* copy existing content */
+			for (i = 0; i < line_len; i++)
+				new_line[i] = line[i];
+
 			free(line);
-			return (NULL);
+			line = new_line;
 		}
 
-		/* copy manually */
-		for (j = 0; j < (ssize_t)line_len; j++)
-			new_line[j] = line[j];
-
-		if (line)
-		{
-			free(line);
-			line = NULL; /* prevent dangling pointer */
-		}
-
-		line = new_line;
 		line[line_len++] = c;
-		line[line_len] = '\0';
 
 		if (c == '\n')
 			break;
 	}
 
+	line[line_len] = '\0';
 	return (line);
 }
