@@ -16,6 +16,14 @@ void print_env(void);
 char *_getline(void);
 int handle_exit(char **args, char *line, int status, char **av);
 
+
+/** built-in functions **/
+int handle_setenv(char **args);
+int handle_unsetenv(char **args);
+int handle_cd(char **args);
+int handle_builtin(char **args, int *status);
+
+
 /** String helper functions **/
 int _strlen(char *s);
 char *_strcpy(char *dest, char *src);

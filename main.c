@@ -104,6 +104,13 @@ int main(int ac, char *av[])
 			continue;
 		}
 
+		/* Check if it's a builtin command */
+		if (handle_builtin(args, &status))
+		{
+			free(line);
+			continue;
+		}
+
 		status = shell(args, av);
 		free(line);
 		line = NULL;
