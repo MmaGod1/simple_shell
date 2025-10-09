@@ -93,8 +93,8 @@ int main(int ac, char *av[])
 		/* Handle the exit command */
 		if (_strcmp(args[0], "exit") == 0)
 		{
-			free(line);
-			exit(status);
+			if (handle_exit(args, line, status, av))
+				continue;
 		}
 
 		if (_strcmp(args[0], "env") == 0)
