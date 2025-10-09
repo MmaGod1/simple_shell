@@ -116,5 +116,6 @@ int main(int ac, char *av[])
 		line = NULL;
 	}
 	free(line);
+	free_env();
 	return (status);
 }

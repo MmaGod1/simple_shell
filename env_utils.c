@@ -38,8 +38,10 @@ char *_getenv(const char *name)
  */
 int _setenv(const char *name, const char *value, int overwrite)
 {
-	char **new_environ, *new_var;
+	char **new_environ, *new_var, **tmp;
 	int i, j, k, name_len, value_len, env_size = 0;
+	static char **allocated_vars = NULL;
+	static int allocated_count = 0;
 
 	if (!name || !value || name[0] == '\0')
 		return (-1);
@@ -56,6 +58,15 @@ int _setenv(const char *name, const char *value, int overwrite)
 		{
 			if (!overwrite)
 				return (0);
+			/* Check if this was allocated by us before freeing */
+			for (k = 0; k < allocated_count; k++)
+			{
+				if (allocated_vars[k] == environ[i])
+				{
+					free(environ[i]);
+					break;
+				}
+			}
 			/* Replace existing variable */
 			new_var = malloc(name_len + value_len + 2);
 			if (!new_var)
@@ -67,6 +78,19 @@ int _setenv(const char *name, const char *value, int overwrite)
 				new_var[j++] = value[k];
 			new_var[j] = '\0';
 			environ[i] = new_var;
+			/* Track this allocation */
+			if (k == allocated_count)
+			{
+				char **tmp = malloc(sizeof(char *) * (allocated_count + 2));
+				if (tmp)
+				{
+					for (j = 0; j < allocated_count; j++)
+						tmp[j] = allocated_vars[j];
+					free(allocated_vars);
+					allocated_vars = tmp;
+					allocated_vars[allocated_count++] = new_var;
+				}
+			}
 			return (0);
 		}
 		env_size++;
@@ -95,6 +119,18 @@ int _setenv(const char *name, const char *value, int overwrite)
 	new_environ[env_size] = new_var;
 	new_environ[env_size + 1] = NULL;
 	environ = new_environ;
+
+	/* Track this allocation */
+	tmp = malloc(sizeof(char *) * (allocated_count + 2));
+	if (tmp)
+	{
+		for (j = 0; j < allocated_count; j++)
+			tmp[j] = allocated_vars[j];
+		free(allocated_vars);
+		allocated_vars = tmp;
+		allocated_vars[allocated_count++] = new_var;
+	}
+
 	return (0);
 }
 
@@ -169,3 +205,24 @@ int handle_unsetenv(char **args)
 	return (0);
 }
 
+
+/**
+ * free_env - frees all dynamically allocated environment variables
+ * Return: void
+ */
+void free_env(void)
+{
+	extern char **environ;
+	int i;
+
+	if (!environ)
+		return;
+
+	for (i = 0; environ[i]; i++)
+	{
+		/* Each environ[i] may be dynamically allocated by _setenv */
+		free(environ[i]);
+	}
+
+	free(environ);
+}

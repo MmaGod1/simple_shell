@@ -23,6 +23,7 @@ int _setenv(const char *name, const char *value, int overwrite);
 int handle_setenv(char **args);
 int handle_unsetenv(char **args);
 int _unsetenv(const char *name);
+void free_env(void);
 int handle_cd(char **args);
 int handle_builtin(char **args, int *status);
 
