@@ -8,27 +8,20 @@
  */
 int handle_cd(char **args)
 {
-	char *dir, *oldpwd_value, cwd[1024];
-	char old_cwd[1024];
+	char *dir, *oldpwd_value, old_cwd[1024], cwd[1024];
 
 	if (getcwd(old_cwd, sizeof(old_cwd)) == NULL)
-	{
-		perror("cd: getcwd failed");
 		return (1);
-	}
 
 	if (!args[1])
 	{
-		dir = getenv("HOME");
+		dir = _getenv("HOME");
 		if (!dir)
-		{
-			fprintf(stderr, "cd: HOME not set\n");
-			return (1);
-		}
+			return (0); /* Do nothing if HOME not set */
 	}
 	else if (_strcmp(args[1], "-") == 0)
 	{
-		oldpwd_value = getenv("OLDPWD");
+		oldpwd_value = _getenv("OLDPWD");
 		if (!oldpwd_value)
 		{
 			fprintf(stderr, "cd: OLDPWD not set\n");
@@ -48,12 +41,9 @@ int handle_cd(char **args)
 		return (1);
 	}
 
-	/* Update OLDPWD to previous directory */
-	setenv("OLDPWD", old_cwd, 1);
-
-	/* Update PWD to new directory */
+	_setenv("OLDPWD", old_cwd, 1);
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
-		setenv("PWD", cwd, 1);
+		_setenv("PWD", cwd, 1);
 
 	return (0);
 }
@@ -68,9 +58,7 @@ int handle_cd(char **args)
 int handle_builtin(char **args, int *status)
 {
 	if (_strcmp(args[0], "exit") == 0)
-	{
 		exit(*status);
-	}
 	else if (_strcmp(args[0], "env") == 0)
 	{
 		print_env();
@@ -95,4 +83,3 @@ int handle_builtin(char **args, int *status)
 
 	return (0);
 }
-

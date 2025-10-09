@@ -18,8 +18,11 @@ int handle_exit(char **args, char *line, int status, char **av);
 
 
 /** built-in functions **/
+char *_getenv(const char *name);
+int _setenv(const char *name, const char *value, int overwrite);
 int handle_setenv(char **args);
 int handle_unsetenv(char **args);
+int _unsetenv(const char *name);
 int handle_cd(char **args);
 int handle_builtin(char **args, int *status);
 
