@@ -9,34 +9,40 @@
  *
  * Description:
  *  - If no argument: exits with current status.
- *  - If argument is a valid integer: exits with that code.
- *  - If invalid number: prints error and exits with status 2.
+ *  - If argument is a valid non-negative integer: exits with that code.
+ *  - If invalid (non-digit or negative): prints error and exits with code 2.
  *
  * Return: Does not return if exiting; returns 1 to continue otherwise.
  */
 int handle_exit(char **args, char *line, int status, char **av)
 {
-	int i = 0, exit_status = status;
+	int i;
 	char *num = args[1];
+	unsigned int exit_status;
 
 	/* No argument */
 	if (num == NULL)
 	{
 		free(line);
-		exit(exit_status);
+		exit(status);
 	}
 
-	/* Check if numeric argument (may start with '-') */
+	/* Reject negative numbers immediately */
 	if (num[0] == '-')
-		i++;
+	{
+		fprintf(stderr, "%s: 1: exit: Illegal number: %s\n", av[0], num);
+		free(line);
+		exit(2);
+	}
 
-	for (; num[i] != '\0'; i++)
+	/* Check if every character is a digit */
+	for (i = 0; num[i]; i++)
 	{
 		if (num[i] < '0' || num[i] > '9')
 		{
 			fprintf(stderr, "%s: 1: exit: Illegal number: %s\n", av[0], num);
 			free(line);
-			exit(2); /* required by checker */
+			exit(2);
 		}
 	}
 
