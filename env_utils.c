@@ -1,5 +1,9 @@
 #include "main.h"
 
+/* Keep track of dynamically allocated environment variables */
+static char **allocated_vars = NULL;
+static int allocated_count = 0;
+
 /**
  * _getenv - get environment variable value
  * @name: variable name
@@ -28,111 +32,74 @@ char *_getenv(const char *name)
 	return (NULL);
 }
 
+
 /**
- * _setenv - set or modify environment variable
- * @name: variable name
- * @value: variable value
- * @overwrite: whether to overwrite existing variable
- *
+ * _setenv - sets or updates an environment variable
+ * @name: name of the variable
+ * @value: value to set
+ * @overwrite: if non-zero, overwrite existing value
  * Return: 0 on success, -1 on failure
  */
 int _setenv(const char *name, const char *value, int overwrite)
 {
-	char **new_environ, *new_var, **tmp;
-	int i, j, k, name_len, value_len, env_size = 0;
-	static char **allocated_vars = NULL;
-	static int allocated_count = 0;
+	int i;
+	size_t name_len, value_len;
+	char *new_var;
+	char **tmp;
 
-	if (!name || !value || name[0] == '\0')
+	if (!name || !value)
 		return (-1);
 
 	name_len = _strlen((char *)name);
 	value_len = _strlen((char *)value);
 
-	/* Check if variable exists */
+	/* Check if variable already exists */
 	for (i = 0; environ[i]; i++)
 	{
-		for (j = 0; j < name_len && environ[i][j] == name[j]; j++)
-			;
-		if (j == name_len && environ[i][j] == '=')
+		if (_strncmp(environ[i], (char *)name, name_len) == 0 &&
+				environ[i][name_len] == '=')
 		{
 			if (!overwrite)
 				return (0);
-			/* Check if this was allocated by us before freeing */
-			for (k = 0; k < allocated_count; k++)
-			{
-				if (allocated_vars[k] == environ[i])
-				{
-					free(environ[i]);
-					break;
-				}
-			}
-			/* Replace existing variable */
+
 			new_var = malloc(name_len + value_len + 2);
 			if (!new_var)
 				return (-1);
-			for (j = 0; j < name_len; j++)
-				new_var[j] = name[j];
-			new_var[j++] = '=';
-			for (k = 0; k < value_len; k++)
-				new_var[j++] = value[k];
-			new_var[j] = '\0';
+
+			_strcpy(new_var, (char *)name);
+			new_var[name_len] = '=';
+			_strcpy(new_var + name_len + 1, (char *)value);
+
+			free(environ[i]);
 			environ[i] = new_var;
-			/* Track this allocation */
-			if (k == allocated_count)
-			{
-				char **tmp = malloc(sizeof(char *) * (allocated_count + 2));
-				if (tmp)
-				{
-					for (j = 0; j < allocated_count; j++)
-						tmp[j] = allocated_vars[j];
-					free(allocated_vars);
-					allocated_vars = tmp;
-					allocated_vars[allocated_count++] = new_var;
-				}
-			}
+
+			/* Don't add to allocated_vars for updates - only for new vars */
 			return (0);
 		}
-		env_size++;
 	}
 
 	/* Add new variable */
-	new_environ = malloc(sizeof(char *) * (env_size + 2));
-	if (!new_environ)
-		return (-1);
-	for (i = 0; i < env_size; i++)
-		new_environ[i] = environ[i];
-
 	new_var = malloc(name_len + value_len + 2);
 	if (!new_var)
-	{
-		free(new_environ);
 		return (-1);
-	}
-	for (j = 0; j < name_len; j++)
-		new_var[j] = name[j];
-	new_var[j++] = '=';
-	for (k = 0; k < value_len; k++)
-		new_var[j++] = value[k];
-	new_var[j] = '\0';
 
-	new_environ[env_size] = new_var;
-	new_environ[env_size + 1] = NULL;
-	environ = new_environ;
+	_strcpy(new_var, (char *)name);
+	new_var[name_len] = '=';
+	_strcpy(new_var + name_len + 1, (char *)value);
 
-	/* Track this allocation */
-	tmp = malloc(sizeof(char *) * (allocated_count + 2));
+	tmp = realloc(allocated_vars,
+			sizeof(char *) * (allocated_count + 1));
 	if (tmp)
 	{
-		for (j = 0; j < allocated_count; j++)
-			tmp[j] = allocated_vars[j];
-		free(allocated_vars);
 		allocated_vars = tmp;
 		allocated_vars[allocated_count++] = new_var;
 	}
 
+	environ[i] = new_var;
+	environ[i + 1] = NULL;
 	return (0);
 }
+
 
 /**
  * _unsetenv - remove environment variable
@@ -208,21 +175,17 @@ int handle_unsetenv(char **args)
 
 /**
  * free_env - frees all dynamically allocated environment variables
+ *
  * Return: void
  */
 void free_env(void)
 {
-	extern char **environ;
 	int i;
 
-	if (!environ)
-		return;
+	for (i = 0; i < allocated_count; i++)
+		free(allocated_vars[i]);
 
-	for (i = 0; environ[i]; i++)
-	{
-		/* Each environ[i] may be dynamically allocated by _setenv */
-		free(environ[i]);
-	}
-
-	free(environ);
+	free(allocated_vars);
+	allocated_vars = NULL;
+	allocated_count = 0;
 }

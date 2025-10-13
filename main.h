@@ -37,5 +37,6 @@ int _strcmp(char *s1, char *s2);
 int is_delimiter(char c, const char *delim);
 int _strtok(char *line, char **args, int max_args, const char *delim);
 int _atoi(char *s);
+int _strncmp(char *s1, char *s2, int n);
 
 #endif

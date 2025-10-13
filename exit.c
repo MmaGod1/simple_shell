@@ -24,6 +24,7 @@ int handle_exit(char **args, char *line, int status, char **av)
 	if (num == NULL)
 	{
 		free(line);
+		free_env();
 		exit(status);
 	}
 
@@ -32,6 +33,7 @@ int handle_exit(char **args, char *line, int status, char **av)
 	{
 		fprintf(stderr, "%s: 1: exit: Illegal number: %s\n", av[0], num);
 		free(line);
+		free_env();
 		exit(2);
 	}
 
@@ -42,11 +44,13 @@ int handle_exit(char **args, char *line, int status, char **av)
 		{
 			fprintf(stderr, "%s: 1: exit: Illegal number: %s\n", av[0], num);
 			free(line);
+			free_env();
 			exit(2);
 		}
 	}
 
 	exit_status = _atoi(num);
 	free(line);
+	free_env();
 	exit(exit_status);
 }
