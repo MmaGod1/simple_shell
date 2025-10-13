@@ -115,11 +115,11 @@ int execute_with_operators(char *line, char **av, int *status)
 		if (*next)
 		{
 			if (*next == ';')
-				strcpy(op, ";");
+				_strcpy(op, ";");
 			else if (*next == '&')
-				strcpy(op, "&&");
+				_strcpy(op, "&&");
 			else if (*next == '|')
-				strcpy(op, "||");
+				_strcpy(op, "||");
 
 			if (*op == '&' || *op == '|')
 				*next = '\0', *(next + 1) = '\0';
@@ -128,9 +128,9 @@ int execute_with_operators(char *line, char **av, int *status)
 		}
 
 		/* Execute based on operator logic */
-		if (!strcmp(op, ";") ||
-				(!strcmp(op, "&&") && result == 0) ||
-				(!strcmp(op, "||") && result != 0))
+		if (!_strcmp(op, ";") ||
+				(!_strcmp(op, "&&") && result == 0) ||
+				(!_strcmp(op, "||") && result != 0))
 		{
 			expand_status(cmd, *status);  /* expand $? for current command only */
 			result = execute_command(cmd, av, status);
@@ -149,5 +149,5 @@ int execute_with_operators(char *line, char **av, int *status)
 			break;
 	}
 
-	return result;
+	return (result);
 }
