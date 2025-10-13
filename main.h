@@ -41,9 +41,10 @@ int _strncmp(char *s1, char *s2, int n);
 char *_strchr(const char *s, char c);
 void _strncpy(char *dest, const char *src, size_t n);
 
-/** Seoarators and Operators */
-int parse_line(char *line, char **commands, char **operators);int execute_with_operators(char *line, char **av, int *status);
-
+/** Separators and Operators */
+int parse_line(char *line, char **commands, char **operators);
+int execute_with_operators(char *line, char **av, int *status);
+void expand_status(char *line, int last_status);
 
 /** Alias Implementation functions **/
 typedef struct alias_s

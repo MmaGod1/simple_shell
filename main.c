@@ -62,7 +62,7 @@ int shell(char **args, char **av)
 int main(int ac, char *av[])
 {
 	int status = 0;
-	char *args[1024], *line = NULL;
+	char *line = NULL;
 	(void)ac;
 
 	while (1)
@@ -82,29 +82,28 @@ int main(int ac, char *av[])
 			break;
 		}
 
-		/* Tokenize the line */
-		_strtok(line, args, 1024, " \n\t");
-
-		if (args[0] == NULL)
+		/* Handle empty input */
+		if (line[0] == '\0')
 		{
 			free(line);
 			continue;
 		}
 
-		/* Handle the exit command */
-		if (_strcmp(args[0], "exit") == 0)
+		/* Handle exit command early */
+		if (_strncmp(line, "exit", 4) == 0)
 		{
+			char *args[1024];
+			_strtok(line, args, 1024, " \n\t");
 			if (handle_exit(args, line, status, av))
 				continue;
 		}
 
-		/* Execute with operators (;, &&, ||) */
+		/* Expand and execute command line */
 		execute_with_operators(line, av, &status);
 		free(line);
 		line = NULL;
 	}
 
-	free(line);
 	free_env();
 	free_aliases();
 	return (status);

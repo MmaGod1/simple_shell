@@ -52,6 +52,37 @@ int execute_command(char *cmd, char **av, int *status)
 
 
 /**
+ * expand_status - replaces $? with last command status
+ * @line: command line to modify
+ * @last_status: last command exit status
+ * Return: void
+ */
+void expand_status(char *line, int last_status)
+{
+	char buffer[2048], num[16];
+	char *p = line, *b = buffer;
+	int num_len;
+
+	sprintf(num, "%d", last_status);
+	num_len = _strlen(num);
+
+	while (*p)
+	{
+		if (*p == '$' && *(p + 1) == '?')
+		{
+			_strcpy(b, num);
+			b += num_len;
+			p += 2;
+		}
+		else
+			*b++ = *p++;
+	}
+
+	*b = '\0';
+	_strcpy(line, buffer);
+}
+
+/**
  * execute_with_operators - parse and execute commands with ;, &&, ||
  * @line: input line
  * @av: argument vector
@@ -61,58 +92,62 @@ int execute_command(char *cmd, char **av, int *status)
  */
 int execute_with_operators(char *line, char **av, int *status)
 {
-	char *cmd_start = line;
-	char *op = NULL;
+	char *cmd = line;
+	char *next, *save;
+	char op[3] = ";";
 	int result = 0;
 
-	while (*cmd_start)
+	while (cmd && *cmd)
 	{
-		char *next = cmd_start;
+		/* Skip whitespace */
+		while (*cmd == ' ' || *cmd == '\t')
+			cmd++;
 
-		/* Find next operator (;, &&, ||) */
+		/* Find next operator */
+		next = cmd;
 		while (*next && !(*next == ';' ||
 					(*next == '&' && *(next + 1) == '&') ||
 					(*next == '|' && *(next + 1) == '|')))
 			next++;
 
-		/* Temporarily terminate current command */
+		save = next;
+
 		if (*next)
 		{
 			if (*next == ';')
-				op = ";";
+				strcpy(op, ";");
 			else if (*next == '&')
-				op = "&&";
+				strcpy(op, "&&");
 			else if (*next == '|')
-				op = "||";
+				strcpy(op, "||");
 
-			*next = '\0';
+			if (*op == '&' || *op == '|')
+				*next = '\0', *(next + 1) = '\0';
+			else
+				*next = '\0';
 		}
-		else
-			op = NULL;
 
-		/* Trim whitespace */
-		while (*cmd_start == ' ' || *cmd_start == '\t')
-			cmd_start++;
-
-		if (*cmd_start != '\0')
+		/* Execute based on operator logic */
+		if (!strcmp(op, ";") ||
+				(!strcmp(op, "&&") && result == 0) ||
+				(!strcmp(op, "||") && result != 0))
 		{
-			if (!op || _strcmp(op, ";") == 0 ||
-					(_strcmp(op, "&&") == 0 && result == 0) ||
-					(_strcmp(op, "||") == 0 && result != 0))
-			{
-				result = execute_command(cmd_start, av, status);
-			}
+			expand_status(cmd, *status);  /* expand $? for current command only */
+			result = execute_command(cmd, av, status);
+			*status = result; /* update for next loop */
 		}
 
 		/* Move to next command */
-		if (!op)
-			break;
-
-		if (_strcmp(op, "&&") == 0 || _strcmp(op, "||") == 0)
-			cmd_start = next + 2;
+		if (*save)
+		{
+			if (*op == '&' || *op == '|')
+				cmd = save + 2;
+			else
+				cmd = save + 1;
+		}
 		else
-			cmd_start = next + 1;
+			break;
 	}
 
-	return (result);
+	return result;
 }
