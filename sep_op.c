@@ -82,28 +82,32 @@ void expand_status(char *line, int last_status)
 	_strcpy(line, buffer);
 }
 
+
 /**
- * execute_with_operators - parse and execute commands with ;, &&, ||
- * @line: input line
+ * execute_with_operators - execute commands separated by ;, &&, or ||
+ * @line: input command line
  * @av: argument vector
- * @status: pointer to last status
- *
- * Return: last command status
+ * @status: pointer to last command status
+ * Return: status of last executed command
  */
 int execute_with_operators(char *line, char **av, int *status)
 {
-	char *cmd = line;
-	char *next, *save;
-	char op[3] = ";";
-	int result = 0;
+	char *cmd, *next, *save, op[3];
+	int result;
+	int len;
+	char *segment;
+
+	cmd = line;
+	_strcpy(op, ";");
+	result = 0;
 
 	while (cmd && *cmd)
 	{
-		/* Skip whitespace */
+		/* skip leading whitespace */
 		while (*cmd == ' ' || *cmd == '\t')
 			cmd++;
 
-		/* Find next operator */
+		/* find next operator */
 		next = cmd;
 		while (*next && !(*next == ';' ||
 					(*next == '&' && *(next + 1) == '&') ||
@@ -112,6 +116,7 @@ int execute_with_operators(char *line, char **av, int *status)
 
 		save = next;
 
+		/* determine operator type (do not modify line) */
 		if (*next)
 		{
 			if (*next == ';')
@@ -120,27 +125,34 @@ int execute_with_operators(char *line, char **av, int *status)
 				_strcpy(op, "&&");
 			else if (*next == '|')
 				_strcpy(op, "||");
-
-			if (*op == '&' || *op == '|')
-				*next = '\0', *(next + 1) = '\0';
-			else
-				*next = '\0';
 		}
+		else
+			_strcpy(op, ";");
 
-		/* Execute based on operator logic */
-		if (!_strcmp(op, ";") ||
-				(!_strcmp(op, "&&") && result == 0) ||
-				(!_strcmp(op, "||") && result != 0))
+		/* copy current command segment into its own buffer */
+		len = next - cmd;
+		segment = malloc((len + 1) * sizeof(char));
+		if (segment == NULL)
+			return (-1);
+		_strncpy(segment, cmd, (size_t)len);
+		segment[len] = '\0';
+
+		/* execute if operator logic allows */
+		if (_strcmp(op, ";") == 0 ||
+				(_strcmp(op, "&&") == 0 && result == 0) ||
+				(_strcmp(op, "||") == 0 && result != 0))
 		{
-			expand_status(cmd, *status);  /* expand $? for current command only */
-			result = execute_command(cmd, av, status);
-			*status = result; /* update for next loop */
+			expand_status(segment, *status);
+			result = execute_command(segment, av, status);
+			*status = result;
 		}
 
-		/* Move to next command */
+		free(segment);
+
+		/* advance cmd pointer past the operator */
 		if (*save)
 		{
-			if (*op == '&' || *op == '|')
+			if (*save == '&' || *save == '|')
 				cmd = save + 2;
 			else
 				cmd = save + 1;
