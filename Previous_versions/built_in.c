@@ -84,11 +84,6 @@ int handle_builtin(char **args, int *status)
 		*status = handle_cd(args);
 		return (1);
 	}
-	else if (_strcmp(args[0], "alias") == 0)
-	{
-		*status = handle_alias(args);
-		return (1);
-	}	
 
 	return (0);
 }

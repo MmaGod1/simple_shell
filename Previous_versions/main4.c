@@ -51,7 +51,6 @@ int shell(char **args, char **av)
 	return (2);
 }
 
-
 /**
  * main - entry point for the simple shell
  * @ac: argument count
@@ -98,14 +97,25 @@ int main(int ac, char *av[])
 				continue;
 		}
 
-		/* Execute with operators (;, &&, ||) */
-		execute_with_operators(line, av, &status);
+		if (_strcmp(args[0], "env") == 0)
+		{
+			print_env();
+			free(line);
+			continue;
+		}
+
+		/* Check if it's a builtin command */
+		if (handle_builtin(args, &status))
+		{
+			free(line);
+			continue;
+		}
+
+		status = shell(args, av);
 		free(line);
 		line = NULL;
 	}
-
 	free(line);
 	free_env();
-	free_aliases();
 	return (status);
 }

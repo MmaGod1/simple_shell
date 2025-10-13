@@ -53,3 +53,32 @@ int _strncmp(char *s1, char *s2, int n)
 
 	return (0);
 }
+
+/**
+ * _strchr - locates the first occurrence of a character in a string  
+ * @s: the string to search  
+ * @c: the character to locate  
+ * Return: a pointer to the first occurrence of @c in @s, or NULL if not found  
+ */
+char *_strchr(const char *s, char c)
+{
+	while (*s && *s != c)
+		s++;
+	return (*s == c ? (char *)s : NULL);
+}
+
+
+/**
+ * _strncpy - copies up to n characters from one string to another  
+ * @dest: destination buffer  
+ * @src: source string  
+ * @n: maximum number of characters to copy  
+ * Return: a pointer to the destination string @dest  
+ */
+void _strncpy(char *dest, const char *src, size_t n) {
+	size_t i;
+	for (i = 0; i < n && src[i] != '\0'; i++)
+		dest[i] = src[i];
+	for (; i < n; i++)
+		dest[i] = '\0';
+}
