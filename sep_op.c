@@ -45,6 +45,10 @@ int execute_command(char *cmd, char **av, int *status)
 
 	/* Execute external command */
 	result = shell(args, av);
+
+	if (WIFEXITED(result))
+		result = WEXITSTATUS(result);
+
 	*status = result;
 	free(args);
 	return (result);
@@ -92,74 +96,69 @@ void expand_status(char *line, int last_status)
  */
 int execute_with_operators(char *line, char **av, int *status)
 {
-	char *cmd, *next, *save, op[3];
-	int result;
-	int len;
-	char *segment;
+        char *cmd, *next, *save, op[3];
+        char *segment;
+        int result;
+        int len;
 
-	cmd = line;
-	_strcpy(op, ";");
-	result = 0;
+        cmd = line;
+        _strcpy(op, ";");
+        result = 0;
 
-	while (cmd && *cmd)
-	{
-		/* skip leading whitespace */
-		while (*cmd == ' ' || *cmd == '\t')
-			cmd++;
+        while (cmd && *cmd)
+        {
+                while (*cmd == ' ' || *cmd == '\t')
+                        cmd++;
 
-		/* find next operator */
-		next = cmd;
-		while (*next && !(*next == ';' ||
-					(*next == '&' && *(next + 1) == '&') ||
-					(*next == '|' && *(next + 1) == '|')))
-			next++;
+                next = cmd;
+                while (*next && !(*next == ';' ||
+                        (*next == '&' && *(next + 1) == '&') ||
+                        (*next == '|' && *(next + 1) == '|')))
+                        next++;
 
-		save = next;
+                save = next;
 
-		/* determine operator type (do not modify line) */
-		if (*next)
-		{
-			if (*next == ';')
-				_strcpy(op, ";");
-			else if (*next == '&')
-				_strcpy(op, "&&");
-			else if (*next == '|')
-				_strcpy(op, "||");
-		}
-		else
-			_strcpy(op, ";");
+                if (*next)
+                {
+                        if (*next == ';')
+                                _strcpy(op, ";");
+                        else if (*next == '&')
+                                _strcpy(op, "&&");
+                        else if (*next == '|')
+                                _strcpy(op, "||");
+                }
+                else
+                        _strcpy(op, ";");
 
-		/* copy current command segment into its own buffer */
-		len = next - cmd;
-		segment = malloc((len + 1) * sizeof(char));
-		if (segment == NULL)
-			return (-1);
-		_strncpy(segment, cmd, (size_t)len);
-		segment[len] = '\0';
+                len = next - cmd;
+                segment = malloc(len + 1);
+                if (!segment)
+                        return (-1);
 
-		/* execute if operator logic allows */
-		if (_strcmp(op, ";") == 0 ||
-				(_strcmp(op, "&&") == 0 && result == 0) ||
-				(_strcmp(op, "||") == 0 && result != 0))
-		{
-			expand_status(segment, *status);
-			result = execute_command(segment, av, status);
-			*status = result;
-		}
+                _strncpy(segment, cmd, len);
+                segment[len] = '\0';
 
-		free(segment);
+                if (_strcmp(op, ";") == 0 ||
+                        (_strcmp(op, "&&") == 0 && result == 0) ||
+                        (_strcmp(op, "||") == 0 && result != 0))
+                {
+                        expand_status(segment, *status);
+                        result = execute_command(segment, av, status);
+                        *status = result;
+                }
 
-		/* advance cmd pointer past the operator */
-		if (*save)
-		{
-			if (*save == '&' || *save == '|')
-				cmd = save + 2;
-			else
-				cmd = save + 1;
-		}
-		else
-			break;
-	}
+                free(segment);
 
-	return (result);
+                if (*save)
+                {
+                        if (*save == '&' || *save == '|')
+                                cmd = save + 2;
+                        else
+                                cmd = save + 1;
+                }
+                else
+                        break;
+        }
+
+        return (result);
 }
