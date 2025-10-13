@@ -24,10 +24,13 @@ int handle_cd(char **args)
 		oldpwd_value = _getenv("OLDPWD");
 		if (!oldpwd_value)
 		{
-			fprintf(stderr, "cd: OLDPWD not set\n");
-			return (1);
+			/* If OLDPWD not set, use current directory */
+			dir = old_cwd;
 		}
-		dir = oldpwd_value;
+		else
+		{
+			dir = oldpwd_value;
+		}
 		printf("%s\n", dir);
 	}
 	else
@@ -37,7 +40,7 @@ int handle_cd(char **args)
 
 	if (chdir(dir) != 0)
 	{
-		perror("cd");
+		fprintf(stderr, "./hsh: 1: cd: can't cd to %s\n", dir);
 		return (1);
 	}
 
@@ -47,6 +50,7 @@ int handle_cd(char **args)
 
 	return (0);
 }
+
 
 /**
  * handle_builtin - checks and executes builtin commands
