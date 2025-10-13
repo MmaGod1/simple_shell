@@ -25,6 +25,16 @@ int execute_command(char *cmd, char **av, int *status)
 		return (0);
 	}
 
+	/* Check for alias substitution */
+	alias_t *alias_entry = find_alias(args[0]);
+	if (alias_entry)
+	{
+		free(args[0]);
+		args[0] = malloc(_strlen(alias_entry->value) + 1);
+		if (args[0])
+			_strcpy(args[0], alias_entry->value);
+	}
+
 	/* Handle builtins */
 	if (handle_builtin(args, status))
 	{
@@ -39,6 +49,7 @@ int execute_command(char *cmd, char **av, int *status)
 	return (result);
 }
 
+
 /**
  * execute_with_operators - parse and execute commands with ;, &&, ||
  * @line: input line
@@ -49,65 +60,58 @@ int execute_command(char *cmd, char **av, int *status)
  */
 int execute_with_operators(char *line, char **av, int *status)
 {
-	char *cmd_copy, *cmd, *sep_pos;
-	char *current_op = ";";
+	char *cmd_start = line;
+	char *op = NULL;
 	int result = 0;
 
-	cmd_copy = malloc(_strlen(line) + 1);
-	if (!cmd_copy)
-		return (-1);
-	_strcpy(cmd_copy, line);
-
-	cmd = cmd_copy;
-
-	while (*cmd)
+	while (*cmd_start)
 	{
-		/* Skip leading whitespace */
-		while (*cmd == ' ' || *cmd == '\t')
-			cmd++;
+		char *next = cmd_start;
 
-		/* Find next operator */
-		sep_pos = cmd;
-		while (*sep_pos && *sep_pos != ';' && 
-				!(*sep_pos == '&' && *(sep_pos + 1) == '&') &&
-				!(*sep_pos == '|' && *(sep_pos + 1) == '|'))
-			sep_pos++;
+		/* Find next operator (;, &&, ||) */
+		while (*next && !(*next == ';' ||
+					(*next == '&' && *(next + 1) == '&') ||
+					(*next == '|' && *(next + 1) == '|')))
+			next++;
 
-		if (*sep_pos)
+		/* Temporarily terminate current command */
+		if (*next)
 		{
-			*sep_pos = '\0';
+			if (*next == ';')
+				op = ";";
+			else if (*next == '&')
+				op = "&&";
+			else if (*next == '|')
+				op = "||";
 
-			/* Check what operator we found */
-			if (*(sep_pos + 1) == '&')
-				current_op = "&&";
-			else if (*(sep_pos + 1) == '|')
-				current_op = "||";
-			else
-				current_op = ";";
+			*next = '\0';
 		}
+		else
+			op = NULL;
 
-		/* Execute current command based on previous operator */
-		if (_strcmp(current_op, ";") == 0 || 
-				(_strcmp(current_op, "&&") == 0 && result == 0) ||
-				(_strcmp(current_op, "||") == 0 && result != 0))
+		/* Trim whitespace */
+		while (*cmd_start == ' ' || *cmd_start == '\t')
+			cmd_start++;
+
+		if (*cmd_start != '\0')
 		{
-			result = execute_command(cmd, av, status);
+			if (!op || _strcmp(op, ";") == 0 ||
+					(_strcmp(op, "&&") == 0 && result == 0) ||
+					(_strcmp(op, "||") == 0 && result != 0))
+			{
+				result = execute_command(cmd_start, av, status);
+			}
 		}
 
 		/* Move to next command */
-		if (*sep_pos)
-		{
-			if (_strcmp(current_op, "&&") == 0 || 
-					_strcmp(current_op, "||") == 0)
-				cmd = sep_pos + 2;
-			else
-				cmd = sep_pos + 1;
-		}
-		else
+		if (!op)
 			break;
+
+		if (_strcmp(op, "&&") == 0 || _strcmp(op, "||") == 0)
+			cmd_start = next + 2;
+		else
+			cmd_start = next + 1;
 	}
 
-	free(cmd_copy);
 	return (result);
 }
-
