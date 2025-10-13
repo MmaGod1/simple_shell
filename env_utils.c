@@ -1,7 +1,7 @@
 #include "main.h"
 
 /* Keep track of dynamically allocated environment variables */
-static char **allocated_vars = NULL;
+static char *allocated_vars[1024];
 static int allocated_count = 0;
 
 /**
@@ -32,7 +32,6 @@ char *_getenv(const char *name)
 	return (NULL);
 }
 
-
 /**
  * _setenv - sets or updates an environment variable
  * @name: name of the variable
@@ -45,7 +44,6 @@ int _setenv(const char *name, const char *value, int overwrite)
 	int i;
 	size_t name_len, value_len;
 	char *new_var;
-	char **tmp;
 
 	if (!name || !value)
 		return (-1);
@@ -70,10 +68,11 @@ int _setenv(const char *name, const char *value, int overwrite)
 			new_var[name_len] = '=';
 			_strcpy(new_var + name_len + 1, (char *)value);
 
-			free(environ[i]);
-			environ[i] = new_var;
+			/* Track this allocation for freeing later */
+			if (allocated_count < 1024)
+				allocated_vars[allocated_count++] = new_var;
 
-			/* Don't add to allocated_vars for updates - only for new vars */
+			environ[i] = new_var;
 			return (0);
 		}
 	}
@@ -87,19 +86,14 @@ int _setenv(const char *name, const char *value, int overwrite)
 	new_var[name_len] = '=';
 	_strcpy(new_var + name_len + 1, (char *)value);
 
-	tmp = realloc(allocated_vars,
-			sizeof(char *) * (allocated_count + 1));
-	if (tmp)
-	{
-		allocated_vars = tmp;
+	/* Track this allocation for freeing later */
+	if (allocated_count < 1024)
 		allocated_vars[allocated_count++] = new_var;
-	}
 
 	environ[i] = new_var;
 	environ[i + 1] = NULL;
 	return (0);
 }
-
 
 /**
  * _unsetenv - remove environment variable
@@ -137,6 +131,21 @@ int _unsetenv(const char *name)
 }
 
 /**
+ * free_env - frees all dynamically allocated environment variables
+ *
+ * Return: void
+ */
+void free_env(void)
+{
+	int i;
+
+	for (i = 0; i < allocated_count; i++)
+		free(allocated_vars[i]);
+
+	allocated_count = 0;
+}
+
+/**
  * handle_setenv - built-in setenv command
  * @args: command arguments
  *
@@ -170,22 +179,4 @@ int handle_unsetenv(char **args)
 
 	_unsetenv(args[1]);
 	return (0);
-}
-
-
-/**
- * free_env - frees all dynamically allocated environment variables
- *
- * Return: void
- */
-void free_env(void)
-{
-	int i;
-
-	for (i = 0; i < allocated_count; i++)
-		free(allocated_vars[i]);
-
-	free(allocated_vars);
-	allocated_vars = NULL;
-	allocated_count = 0;
 }
