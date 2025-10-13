@@ -14,6 +14,7 @@
  *
  * Return: Does not return if exiting; returns 1 to continue otherwise.
  */
+
 int handle_exit(char **args, char *line, int status, char **av)
 {
 	int i;
@@ -25,6 +26,7 @@ int handle_exit(char **args, char *line, int status, char **av)
 	{
 		free(line);
 		free_env();
+		free_aliases();
 		exit(status);
 	}
 
@@ -34,6 +36,7 @@ int handle_exit(char **args, char *line, int status, char **av)
 		fprintf(stderr, "%s: 1: exit: Illegal number: %s\n", av[0], num);
 		free(line);
 		free_env();
+		free_aliases();
 		exit(2);
 	}
 
@@ -45,6 +48,7 @@ int handle_exit(char **args, char *line, int status, char **av)
 			fprintf(stderr, "%s: 1: exit: Illegal number: %s\n", av[0], num);
 			free(line);
 			free_env();
+			free_aliases();
 			exit(2);
 		}
 	}
@@ -52,5 +56,6 @@ int handle_exit(char **args, char *line, int status, char **av)
 	exit_status = _atoi(num);
 	free(line);
 	free_env();
+	free_aliases();
 	exit(exit_status);
 }

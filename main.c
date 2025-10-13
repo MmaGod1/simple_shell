@@ -59,6 +59,7 @@ int shell(char **args, char **av)
  *
  * Return: Always 0
  */
+
 int main(int ac, char *av[])
 {
 	int status = 0;
@@ -78,7 +79,7 @@ int main(int ac, char *av[])
 		{
 			if (isatty(STDIN_FILENO))
 				printf("\n");
-			free(line);
+			/* line is already NULL, no need to free */
 			break;
 		}
 
@@ -86,6 +87,7 @@ int main(int ac, char *av[])
 		if (line[0] == '\0')
 		{
 			free(line);
+			line = NULL;
 			continue;
 		}
 
@@ -104,6 +106,8 @@ int main(int ac, char *av[])
 		line = NULL;
 	}
 
+	if (line)
+		free(line);
 	free_env();
 	free_aliases();
 	return (status);

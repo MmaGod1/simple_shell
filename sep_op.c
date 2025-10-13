@@ -5,14 +5,15 @@
  * @cmd: command string to execute
  * @av: argument vector
  * @status: pointer to last status
- *
- * Return: command status
+ * Return: command exit status
  */
 int execute_command(char *cmd, char **av, int *status)
 {
 	char **args;
 	int result;
 	alias_t *alias_entry;
+	char *alloc_name;
+	int alias_depth;
 
 	args = malloc(sizeof(char *) * 1024);
 	if (!args)
@@ -26,30 +27,61 @@ int execute_command(char *cmd, char **av, int *status)
 		return (0);
 	}
 
-	/* Check for alias substitution */
+	/* recursive alias expansion, allocate replacements only */
+	alloc_name = NULL;
+	alias_depth = 0;
 	alias_entry = find_alias(args[0]);
-	if (alias_entry)
+
+	while (alias_entry && alias_depth < 10)
 	{
-		free(args[0]);
-		args[0] = malloc(_strlen(alias_entry->value) + 1);
-		if (args[0])
-			_strcpy(args[0], alias_entry->value);
+		char *val;
+		char *new_alloc;
+
+		val = alias_entry->value;
+
+		/* stop on self reference */
+		if (_strcmp(val, args[0]) == 0)
+			break;
+
+		new_alloc = malloc(_strlen(val) + 1);
+		if (!new_alloc)
+			break;
+
+		_strcpy(new_alloc, val);
+
+		/* free previous allocated alias replacement, if any */
+		if (alloc_name)
+		{
+			free(alloc_name);
+			alloc_name = NULL;
+		}
+
+		alloc_name = new_alloc;
+		args[0] = alloc_name;
+
+		alias_depth++;
+		alias_entry = find_alias(args[0]);
 	}
 
-	/* Handle builtins */
+	/* handle builtins (must free alloc_name if allocated) */
 	if (handle_builtin(args, status))
 	{
+		if (alloc_name)
+			free(alloc_name);
 		free(args);
 		return (*status);
 	}
 
-	/* Execute external command */
+	/* execute external command */
 	result = shell(args, av);
 
 	if (WIFEXITED(result))
 		result = WEXITSTATUS(result);
 
 	*status = result;
+
+	if (alloc_name)
+		free(alloc_name);
 	free(args);
 	return (result);
 }
@@ -96,69 +128,79 @@ void expand_status(char *line, int last_status)
  */
 int execute_with_operators(char *line, char **av, int *status)
 {
-        char *cmd, *next, *save, op[3];
-        char *segment;
-        int result;
-        int len;
+	char *cmd;
+	char *next;
+	char *save;
+	char op_next[3];
+	char op_prev[3];
+	char *segment;
+	int result;
+	int len;
 
-        cmd = line;
-        _strcpy(op, ";");
-        result = 0;
+	cmd = line;
+	_strcpy(op_prev, ";");   /* previous operator (controls execution) */
+	_strcpy(op_next, ";");
+	result = 0;
 
-        while (cmd && *cmd)
-        {
-                while (*cmd == ' ' || *cmd == '\t')
-                        cmd++;
+	while (cmd && *cmd)
+	{
+		while (*cmd == ' ' || *cmd == '\t')
+			cmd++;
 
-                next = cmd;
-                while (*next && !(*next == ';' ||
-                        (*next == '&' && *(next + 1) == '&') ||
-                        (*next == '|' && *(next + 1) == '|')))
-                        next++;
+		next = cmd;
+		while (*next && !(*next == ';' ||
+					(*next == '&' && *(next + 1) == '&') ||
+					(*next == '|' && *(next + 1) == '|')))
+			next++;
 
-                save = next;
+		save = next;
 
-                if (*next)
-                {
-                        if (*next == ';')
-                                _strcpy(op, ";");
-                        else if (*next == '&')
-                                _strcpy(op, "&&");
-                        else if (*next == '|')
-                                _strcpy(op, "||");
-                }
-                else
-                        _strcpy(op, ";");
+		/* determine operator that follows this command (op_next) */
+		if (*next)
+		{
+			if (*next == ';')
+				_strcpy(op_next, ";");
+			else if (*next == '&')
+				_strcpy(op_next, "&&");
+			else if (*next == '|')
+				_strcpy(op_next, "||");
+		}
+		else
+			_strcpy(op_next, ";");
 
-                len = next - cmd;
-                segment = malloc(len + 1);
-                if (!segment)
-                        return (-1);
+		/* copy current command into independent buffer */
+		len = next - cmd;
+		segment = malloc(len + 1);
+		if (!segment)
+			return (-1);
+		_strncpy(segment, cmd, (size_t)len);
+		segment[len] = '\0';
 
-                _strncpy(segment, cmd, len);
-                segment[len] = '\0';
+		/* decide execution using previous operator and previous result */
+		if (_strcmp(op_prev, ";") == 0 ||
+				(_strcmp(op_prev, "&&") == 0 && result == 0) ||
+				(_strcmp(op_prev, "||") == 0 && result != 0))
+		{
+			expand_status(segment, *status);
+			result = execute_command(segment, av, status);
+			*status = result;
+		}
 
-                if (_strcmp(op, ";") == 0 ||
-                        (_strcmp(op, "&&") == 0 && result == 0) ||
-                        (_strcmp(op, "||") == 0 && result != 0))
-                {
-                        expand_status(segment, *status);
-                        result = execute_command(segment, av, status);
-                        *status = result;
-                }
+		free(segment);
 
-                free(segment);
+		/* advance: previous operator becomes operator that followed this cmd */
+		_strcpy(op_prev, op_next);
 
-                if (*save)
-                {
-                        if (*save == '&' || *save == '|')
-                                cmd = save + 2;
-                        else
-                                cmd = save + 1;
-                }
-                else
-                        break;
-        }
+		if (*save)
+		{
+			if (*save == '&' || *save == '|')
+				cmd = save + 2;
+			else
+				cmd = save + 1;
+		}
+		else
+			break;
+	}
 
-        return (result);
+	return (result);
 }
