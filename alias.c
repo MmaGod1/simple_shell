@@ -72,12 +72,13 @@ void print_alias(alias_t *alias)
  * handle_alias - built-in alias command
  * @args: command arguments
  *
- * Return: 0 on success, 1 on failure
+ * Return: 0 on success
  */
 int handle_alias(char **args)
 {
 	int i;
 	char *eq, *name, *value;
+	char temp[1024];
 
 	if (!args[1])
 	{
@@ -89,12 +90,13 @@ int handle_alias(char **args)
 
 	for (i = 1; args[i]; i++)
 	{
-		eq = _strchr(args[i], '=');
+		_strcpy(temp, args[i]);
+		eq = _strchr(temp, '=');
 		if (eq)
 		{
 			/* Define or update alias */
 			*eq = '\0';
-			name = args[i];
+			name = temp;
 			value = eq + 1;
 			set_alias(name, value);
 		}

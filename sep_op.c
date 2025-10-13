@@ -1,82 +1,46 @@
 #include "main.h"
 
 /**
- * parse_line - parse line with separators and operators (;, &&, ||)
- * @line: input line
- * @commands: array to store parsed commands
- * @operators: array to store operators between commands
+ * execute_command - execute a single command
+ * @cmd: command string to execute
+ * @av: argument vector
+ * @status: pointer to last status
  *
- * Return: number of commands parsed
+ * Return: command status
  */
-int parse_line(char *line, char **commands, char **operators)
+int execute_command(char *cmd, char **av, int *status)
 {
-	int cmd_count = 0, i = 0, start = 0;
-	char *temp;
-	int len;
+	char **args;
+	int result;
 
-	while (line[i])
+	args = malloc(sizeof(char *) * 1024);
+	if (!args)
+		return (-1);
+
+	_strtok(cmd, args, 1024, " \n\t");
+
+	if (args[0] == NULL)
 	{
-		/* Check for operators */
-		if ((line[i] == ';' || line[i] == '&' || line[i] == '|') && cmd_count < 100)
-		{
-			len = i - start;
-			temp = malloc(len + 1);
-			if (temp)
-			{
-				_strncpy(temp, line + start, len);
-				temp[len] = '\0';
-				commands[cmd_count++] = temp;
-			}
-
-			/* Store operator */
-			if (line[i] == ';')
-			{
-				operators[cmd_count - 1] = ";";
-				i++;
-			}
-			else if (line[i] == '&' && line[i + 1] == '&')
-			{
-				operators[cmd_count - 1] = "&&";
-				i += 2;
-			}
-			else if (line[i] == '|' && line[i + 1] == '|')
-			{
-				operators[cmd_count - 1] = "||";
-				i += 2;
-			}
-			else if (line[i] == '|')
-			{
-				operators[cmd_count - 1] = "|";
-				i++;
-			}
-
-			/* Skip spaces */
-			while (line[i] == ' ' || line[i] == '\t')
-				i++;
-			start = i;
-		}
-		else
-			i++;
+		free(args);
+		return (0);
 	}
 
-	/* Add last command */
-	if (start < i && cmd_count < 100)
+	/* Handle builtins */
+	if (handle_builtin(args, status))
 	{
-		len = i - start;
-		temp = malloc(len + 1);
-		if (temp)
-		{
-			_strncpy(temp, line + start, len);
-			temp[len] = '\0';
-			commands[cmd_count++] = temp;
-		}
+		free(args);
+		return (*status);
 	}
 
-	return (cmd_count);
+	/* Execute external command */
+	result = shell(args, av);
+	*status = result;
+	free(args);
+	return (result);
 }
 
 /**
- * execute_with_operators - execute commands with ; && || operators
+ * execute_with_operators - parse and execute commands with ;, &&, ||
  * @line: input line
  * @av: argument vector
  * @status: pointer to last status
@@ -85,61 +49,65 @@ int parse_line(char *line, char **commands, char **operators)
  */
 int execute_with_operators(char *line, char **av, int *status)
 {
-	char *commands[100];
-	char *operators[100];
-	char **args;
-	int cmd_count, i;
+	char *cmd_copy, *cmd, *sep_pos;
+	char *current_op = ";";
+	int result = 0;
 
-	cmd_count = parse_line(line, commands, operators);
+	cmd_copy = malloc(_strlen(line) + 1);
+	if (!cmd_copy)
+		return (-1);
+	_strcpy(cmd_copy, line);
 
-	if (cmd_count == 0)
-		return (0);
+	cmd = cmd_copy;
 
-	for (i = 0; i < cmd_count; i++)
+	while (*cmd)
 	{
-		args = malloc(sizeof(char *) * 100);
-		if (!args)
-			return (-1);
+		/* Skip leading whitespace */
+		while (*cmd == ' ' || *cmd == '\t')
+			cmd++;
 
-		_strtok(commands[i], args, 100, " \n\t");
+		/* Find next operator */
+		sep_pos = cmd;
+		while (*sep_pos && *sep_pos != ';' && 
+				!(*sep_pos == '&' && *(sep_pos + 1) == '&') &&
+				!(*sep_pos == '|' && *(sep_pos + 1) == '|'))
+			sep_pos++;
 
-		if (args[0] == NULL)
+		if (*sep_pos)
 		{
-			free(args);
-			continue;
+			*sep_pos = '\0';
+
+			/* Check what operator we found */
+			if (*(sep_pos + 1) == '&')
+				current_op = "&&";
+			else if (*(sep_pos + 1) == '|')
+				current_op = "||";
+			else
+				current_op = ";";
 		}
 
-		/* Check operator from previous command */
-		if (i > 0)
+		/* Execute current command based on previous operator */
+		if (_strcmp(current_op, ";") == 0 || 
+				(_strcmp(current_op, "&&") == 0 && result == 0) ||
+				(_strcmp(current_op, "||") == 0 && result != 0))
 		{
-			if (_strcmp(operators[i - 1], "&&") == 0 && *status != 0)
-			{
-				free(args);
-				continue; /* Skip if previous failed */
-			}
-			if (_strcmp(operators[i - 1], "||") == 0 && *status == 0)
-			{
-				free(args);
-				continue; /* Skip if previous succeeded */
-			}
+			result = execute_command(cmd, av, status);
 		}
 
-		/* Handle builtins */
-		if (handle_builtin(args, status))
+		/* Move to next command */
+		if (*sep_pos)
 		{
-			free(args);
-			continue;
+			if (_strcmp(current_op, "&&") == 0 || 
+					_strcmp(current_op, "||") == 0)
+				cmd = sep_pos + 2;
+			else
+				cmd = sep_pos + 1;
 		}
-
-		/* Execute external command */
-		*status = shell(args, av);
-		free(args);
+		else
+			break;
 	}
 
-	/* Free command strings */
-	for (i = 0; i < cmd_count; i++)
-		free(commands[i]);
-
-	return (*status);
+	free(cmd_copy);
+	return (result);
 }
 
