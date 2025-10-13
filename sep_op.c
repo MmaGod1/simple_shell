@@ -12,6 +12,7 @@ int execute_command(char *cmd, char **av, int *status)
 {
 	char **args;
 	int result;
+	alias_t *alias_entry;
 
 	args = malloc(sizeof(char *) * 1024);
 	if (!args)
@@ -26,7 +27,7 @@ int execute_command(char *cmd, char **av, int *status)
 	}
 
 	/* Check for alias substitution */
-	alias_t *alias_entry = find_alias(args[0]);
+	alias_entry = find_alias(args[0]);
 	if (alias_entry)
 	{
 		free(args[0]);
