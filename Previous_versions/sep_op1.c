@@ -88,83 +88,34 @@ int execute_command(char *cmd, char **av, int *status)
 
 
 /**
- * expand_variables - produce a new string with $? and $$ expanded
- * @line: input string (may contain $? and $$)
+ * expand_status - replaces $? with last command status
+ * @line: command line to modify
  * @last_status: last command exit status
- *
- * Return: newly allocated string with expansions, or NULL on failure.
- * Caller must free the returned pointer.
+ * Return: void
  */
-char *expand_variables(char *line, int last_status)
+void expand_status(char *line, int last_status)
 {
-	char num[32], pid_str[32];
-	int len_num, len_pid;
-	int i, needed = 0;
-	pid_t pid;
-	char *out;
-	char *p_in, *p_out;
+	char buffer[2048], num[16];
+	char *p = line, *b = buffer;
+	int num_len;
 
-	if (!line)
-		return (NULL);
-
-	pid = getpid();
 	sprintf(num, "%d", last_status);
-	sprintf(pid_str, "%d", pid);
-	len_num = _strlen(num);
-	len_pid = _strlen(pid_str);
+	num_len = _strlen(num);
 
-	/* First pass: compute needed length */
-	p_in = line;
-	while (*p_in)
+	while (*p)
 	{
-		if (*p_in == '$' && *(p_in + 1) == '?')
+		if (*p == '$' && *(p + 1) == '?')
 		{
-			needed += len_num;
-			p_in += 2;
-		}
-		else if (*p_in == '$' && *(p_in + 1) == '$')
-		{
-			needed += len_pid;
-			p_in += 2;
+			_strcpy(b, num);
+			b += num_len;
+			p += 2;
 		}
 		else
-		{
-			needed += 1;
-			p_in++;
-		}
+			*b++ = *p++;
 	}
 
-	/* allocate output buffer (+1 for NUL) */
-	out = malloc(needed + 1);
-	if (!out)
-		return (NULL);
-
-	/* Second pass: fill output buffer */
-	p_in = line;
-	p_out = out;
-	while (*p_in)
-	{
-		if (*p_in == '$' && *(p_in + 1) == '?')
-		{
-			/* copy number without copying NUL */
-			for (i = 0; i < len_num; i++)
-				*p_out++ = num[i];
-			p_in += 2;
-		}
-		else if (*p_in == '$' && *(p_in + 1) == '$')
-		{
-			for (i = 0; i < len_pid; i++)
-				*p_out++ = pid_str[i];
-			p_in += 2;
-		}
-		else
-		{
-			*p_out++ = *p_in++;
-		}
-	}
-
-	*p_out = '\0';
-	return (out);
+	*b = '\0';
+	_strcpy(line, buffer);
 }
 
 
@@ -230,21 +181,14 @@ int execute_with_operators(char *line, char **av, int *status)
 				(_strcmp(op_prev, "&&") == 0 && result == 0) ||
 				(_strcmp(op_prev, "||") == 0 && result != 0))
 		{
-			char *expanded;
-
-			expanded = expand_variables(segment, *status);
-			if (expanded)
-			{
-				free(segment);
-				segment = expanded;
-			}
-
+			expand_status(segment, *status);
 			result = execute_command(segment, av, status);
 			*status = result;
 		}
+
 		free(segment);
 
-		/* previous operator becomes operator that followed this cmd */
+		/* advance: previous operator becomes operator that followed this cmd */
 		_strcpy(op_prev, op_next);
 
 		if (*save)

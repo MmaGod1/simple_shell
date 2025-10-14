@@ -14,6 +14,7 @@ char *find_path(char *command);
 char *_get_path(void);
 void print_env(void);
 char *_getline(void);
+char *_getline_file(FILE *fp);
 int handle_exit(char **args, char *line, int status, char **av);
 
 
@@ -45,6 +46,8 @@ void _strncpy(char *dest, const char *src, size_t n);
 int parse_line(char *line, char **commands, char **operators);
 int execute_with_operators(char *line, char **av, int *status);
 void expand_status(char *line, int last_status);
+char *expand_variables(char *line, int last_status);
+char *remove_comment(char *line);
 
 /** Alias Implementation functions **/
 typedef struct alias_s

@@ -59,13 +59,41 @@ int shell(char **args, char **av)
  *
  * Return: Always 0
  */
-
 int main(int ac, char *av[])
 {
 	int status = 0;
 	char *line = NULL;
-	(void)ac;
+	FILE *fp;
 
+	if (ac == 2)
+	{
+		fp = fopen(av[1], "r");
+		if (!fp)
+		{
+			perror(av[0]);
+			return (EXIT_FAILURE);
+		}
+
+		while ((line = _getline_file(fp)) != NULL)
+		{
+			remove_comment(line);
+			if (line[0] == '\0')
+			{
+				free(line);
+				continue;
+			}
+
+			execute_with_operators(line, av, &status);
+			free(line);
+		}
+
+		fclose(fp);
+		free_env();
+		free_aliases();
+		return (status);
+	}
+
+	/* Interactive mode (already perfect) */
 	while (1)
 	{
 		if (isatty(STDIN_FILENO))
@@ -79,19 +107,15 @@ int main(int ac, char *av[])
 		{
 			if (isatty(STDIN_FILENO))
 				printf("\n");
-			/* line is already NULL, no need to free */
 			break;
 		}
 
-		/* Handle empty input */
 		if (line[0] == '\0')
 		{
 			free(line);
-			line = NULL;
 			continue;
 		}
 
-		/* Handle exit command early */
 		if (_strncmp(line, "exit", 4) == 0)
 		{
 			char *args[1024];
@@ -100,14 +124,11 @@ int main(int ac, char *av[])
 				continue;
 		}
 
-		/* Expand and execute command line */
+		remove_comment(line);
 		execute_with_operators(line, av, &status);
 		free(line);
-		line = NULL;
 	}
 
-	if (line)
-		free(line);
 	free_env();
 	free_aliases();
 	return (status);

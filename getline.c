@@ -68,3 +68,30 @@ char *_getline(void)
 	line[line_len] = '\0';
 	return (line);
 }
+
+
+/**
+ * _getline_file - reads a line from file
+ * @fp: file pointer
+ * Return: allocated line or NULL on EOF/error
+ */
+char *_getline_file(FILE *fp)
+{
+	char buffer[1024];
+	char *line;
+	size_t len;
+
+	if (!fp || !fgets(buffer, sizeof(buffer), fp))
+		return (NULL);
+
+	len = _strlen(buffer);
+	line = malloc(len + 1);
+	if (!line)
+		return (NULL);
+
+	_strcpy(line, buffer);
+	if (len > 0 && line[len - 1] == '\n')
+		line[len - 1] = '\0';
+
+	return (line);
+}
