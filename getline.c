@@ -69,29 +69,42 @@ char *_getline(void)
 	return (line);
 }
 
-
 /**
- * _getline_file - reads a line from file
- * @fp: file pointer
- * Return: allocated line or NULL on EOF/error
+ * _getline_fd - reads one line from a file descriptor
+ * @fd: file descriptor
+ * Return: line read or NULL on EOF/error
  */
-char *_getline_file(FILE *fp)
+char *_getline_fd(int fd)
 {
-	char buffer[1024];
-	char *line;
-	size_t len;
+	char *buf = NULL;
+	char c;
+	int rd, i = 0, size = 1024;
 
-	if (!fp || !fgets(buffer, sizeof(buffer), fp))
+	buf = malloc(size);
+	if (!buf)
 		return (NULL);
 
-	len = _strlen(buffer);
-	line = malloc(len + 1);
-	if (!line)
+	while ((rd = read(fd, &c, 1)) > 0)
+	{
+		if (c == '\n')
+			break;
+
+		buf[i++] = c;
+		if (i >= size - 1)
+		{
+			size += 1024;
+			buf = _realloc(buf, size - 1024, size);
+			if (!buf)
+				return (NULL);
+		}
+	}
+
+	if (rd == 0 && i == 0)
+	{
+		free(buf);
 		return (NULL);
+	}
 
-	_strcpy(line, buffer);
-	if (len > 0 && line[len - 1] == '\n')
-		line[len - 1] = '\0';
-
-	return (line);
+	buf[i] = '\0';
+	return (buf);
 }

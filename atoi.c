@@ -82,3 +82,37 @@ void _strncpy(char *dest, const char *src, size_t n) {
 	for (; i < n; i++)
 		dest[i] = '\0';
 }
+
+
+/**
+ * _int_to_str - convert integer to string placed in buf (no malloc)
+ * @n: integer to convert
+ * @buf: buffer to write
+ *
+ * Return: number of digits written
+ */
+int _int_to_str(int n, char *buf)
+{
+	int len = 0;
+	int i;
+	char rev[32];
+	int tmp;
+
+	if (n == 0)
+	{
+		buf[0] = '0';
+		return (1);
+	}
+
+	tmp = n;
+	while (tmp > 0)
+	{
+		rev[len++] = (char)('0' + (tmp % 10));
+		tmp /= 10;
+	}
+
+	for (i = 0; i < len; i++)
+		buf[i] = rev[len - 1 - i];
+
+	return (len);
+}

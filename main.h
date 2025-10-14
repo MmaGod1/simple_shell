@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <string.h>
+#include <fcntl.h>
 
 extern char **environ;
 
@@ -14,8 +15,9 @@ char *find_path(char *command);
 char *_get_path(void);
 void print_env(void);
 char *_getline(void);
-char *_getline_file(FILE *fp);
+char *_getline_fd(int fd);
 int handle_exit(char **args, char *line, int status, char **av);
+void *_realloc(void *ptr, unsigned int old_size, unsigned int new_size);
 
 
 /** built-in functions **/
@@ -41,6 +43,7 @@ int _atoi(char *s);
 int _strncmp(char *s1, char *s2, int n);
 char *_strchr(const char *s, char c);
 void _strncpy(char *dest, const char *src, size_t n);
+int _int_to_str(int n, char *buf);
 
 /** Separators and Operators */
 int parse_line(char *line, char **commands, char **operators);

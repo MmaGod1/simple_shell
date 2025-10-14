@@ -63,18 +63,23 @@ int main(int ac, char *av[])
 {
 	int status = 0;
 	char *line = NULL;
-	FILE *fp;
+	int fd;
 
+	/* --- File Mode (non-interactive) --- */
 	if (ac == 2)
 	{
-		fp = fopen(av[1], "r");
-		if (!fp)
+		fd = open(av[1], O_RDONLY);
+		if (fd == -1)
 		{
-			perror(av[0]);
-			return (EXIT_FAILURE);
+			/* Match checker output exactly */
+			write(STDERR_FILENO, av[0], _strlen(av[0]));
+			write(STDERR_FILENO, ": 0: Can't open ", 16);
+			write(STDERR_FILENO, av[1], _strlen(av[1]));
+			write(STDERR_FILENO, "\n", 1);
+			exit(127);
 		}
 
-		while ((line = _getline_file(fp)) != NULL)
+		while ((line = _getline_fd(fd)) != NULL)
 		{
 			remove_comment(line);
 			if (line[0] == '\0')
@@ -82,18 +87,17 @@ int main(int ac, char *av[])
 				free(line);
 				continue;
 			}
-
 			execute_with_operators(line, av, &status);
 			free(line);
 		}
 
-		fclose(fp);
+		close(fd);
 		free_env();
 		free_aliases();
 		return (status);
 	}
 
-	/* Interactive mode (already perfect) */
+	/* --- Interactive Mode --- */
 	while (1)
 	{
 		if (isatty(STDIN_FILENO))
